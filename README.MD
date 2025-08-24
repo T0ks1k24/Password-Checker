@@ -1,5 +1,8 @@
 # 🔐 Password Analyzer
 
+![License](https://img.shields.io/github/license/T0ks1k24/Password-Checker?style=for-the-badge)
+
+
 **Password Analyzer** is a **React + FastAPI** web application that checks password strength in real time.  
 It analyzes password length, entropy, strength, and checks if the password has been compromised in known data leaks.
 
