@@ -1,0 +1,22 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: password-analyzer-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+  backend:
+    build: ./backend
+    container_name: password-analyzer-backend
+    ports:
+      - "8000:8000"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
