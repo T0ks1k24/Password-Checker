@@ -1,43 +1,43 @@
-import re
-import math
-from .breach import check_password
-
+from zxcvbn import zxcvbn
 
 def password_strength(password: str) -> dict:
-    breach_info = check_password(password)
-    if breach_info.get("breached"):
-        return {
-            "length": len(password),
-            "entropy": 5.0,
-            "strength": "weak",
-            "safety_percent": 0,
-        }
-
+    results = zxcvbn(password)
+    
+    score = results.get("score", 0)
+    entropy = results.get("guesses_log10", 0) * 3.3219  # convert log10 guesses to entropy bits roughly
+    
     length = len(password)
-    lower = bool(re.search(r"[a-z]", password))
-    upper = bool(re.search(r"[A-Z]", password))
-    digits = bool(re.search(r"\d", password))
-    symbols = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>]", password))
+    crack_time_display = results.get("crack_times_display", {}).get("offline_slow_hashing_1e4_per_second", "instant")
+    
+    feedback = results.get("feedback", {})
+    warning = feedback.get("warning", "")
+    suggestions = feedback.get("suggestions", [])
 
-    charset_size = 0
-    if lower:
-        charset_size += 26
-    if upper:
-        charset_size += 26
-    if digits:
-        charset_size += 10
-    if symbols:
-        charset_size += 32
+    # Map score (0-4) to strength string
+    if score < 2:
+        strength = "weak"
+    elif score == 2:
+        strength = "medium"
+    else:
+        strength = "strong"
 
-    entropy = length * math.log2(charset_size) if charset_size else 0
+    # Map score to a base safety percent, then adjust slightly with entropy for smoother progress bar
+    # Score 0 = 0-20%, Score 1 = 20-40%, Score 2 = 40-60%, Score 3 = 60-80%, Score 4 = 80-100%
+    base_percent = score * 20
+    bonus = min(20, (entropy / 100) * 20) if score < 4 else min(20, (entropy / 150) * 20)
+    safety_percent = min(100, int(base_percent + bonus))
 
-    safety_percent = min(round(entropy * 1.5), 100)
-
-    strength = "weak" if entropy < 40 else "medium" if entropy < 60 else "strong"
+    if not password:
+        safety_percent = 0
+        entropy = 0
 
     return {
         "length": length,
         "entropy": round(entropy, 2),
         "strength": strength,
+        "score": score,
+        "crack_time_display": crack_time_display,
+        "warning": warning,
+        "suggestions": suggestions,
         "safety_percent": safety_percent,
     }
